@@ -1,0 +1,37 @@
+# BIOS, cartridges and anything extracted or dumped from them (copyrighted, never commit)
+*.bin
+*.rom
+*.zip
+*.7z
+*.nv
+*.sav
+*.pc2
+*.ws
+*.ppm
+*.png
+*.exe
+*.EXE
+roms/
+bios/
+carts/
+dumps/
+extracted/
+runs/
+refs/
+saves/
+nvram/
+screenshots/
+
+# Build output
+build/
+build*/
+dist/
+
+# Python
+__pycache__/
+*.pyc
+
+# Local tooling state
+.claude/
+*.ini
+tools/local.sh
