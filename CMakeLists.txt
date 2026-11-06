@@ -14,7 +14,7 @@ add_compile_options(-Wall -Wextra -Wno-unused-parameter)
 
 # the machine
 add_library(bpccore STATIC
-  src/v30mz.c src/aswan.c src/aswan_video.c src/aswan_audio.c src/pcv2.c src/png.c)
+  src/v30mz.c src/aswan.c src/aswan_video.c src/aswan_audio.c src/pcv2.c src/png.c src/zip.c)
 target_compile_definitions(bpccore PUBLIC BPC_VERSION="${BPC_VERSION}")
 
 # headless: scripted buttons, pictures, the state at every frame
@@ -36,6 +36,11 @@ if(BPC_SDL)
     target_link_directories(bpc-emu PRIVATE ${SDL2_LIBRARY_DIRS})
     target_link_libraries(bpc-emu PRIVATE SDL2)
     if(WIN32)
+      enable_language(RC)
+      # icon (res/bpc-emu.ico, made by tools/mkicon.py) and version information
+      set(BPC_ICON "${CMAKE_SOURCE_DIR}/res/bpc-emu.ico")
+      configure_file(res/bpc-emu.rc.in "${CMAKE_BINARY_DIR}/bpc-emu.rc" @ONLY)
+      target_sources(bpc-emu PRIVATE "${CMAKE_BINARY_DIR}/bpc-emu.rc")
       set_target_properties(bpc-emu PROPERTIES WIN32_EXECUTABLE TRUE)
       if(EXISTS "${SDL2_PREFIX}/bin/SDL2.dll")
         # so that the build folder runs with a double click

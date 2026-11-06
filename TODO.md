@@ -2,16 +2,14 @@
 
 ## Next
 
-- Play through a cartridge by hand in the window: a whole lesson, a drill with a time limit,
-  the SRAM's progress kept across a restart.
-- Left: the one button the oracle cannot press. Check it in a screen that uses it (Suugaku's
-  pointer at `4000:4420` moves left on `0100`).
+- Play through a cartridge by hand in the window: a whole lesson, a drill with a time limit.
+  (Tried: the speed, the sound, Left, a save kept across a restart.)
 - The long Esc (held over 150 frames): what command it is.
 - Sound: heard in the window (beeps and square-wave arpeggios, as expected); find which games
   use what and how.
 - The idle alarm (docs/RECON.md): find the counter in the code, and whether 確認 is Circle.
-- The LCD: whether the PCV2's screen has the WonderSwan's segment icons (port `$15`), and what
-  the games write there.
+- Ei-Suu-Koumin Pack turns the LCD off and on (port `$14`, 20 writes in 6000 frames; every other
+  cartridge writes it once): what for.
 
 ## Later
 
@@ -20,5 +18,5 @@
 - The other Pocket Challenge V2 cartridges (only the *Chuugaku Kouza* ones are in the set).
 - WonderSwan cartridges on the PCV2 (the two take each other's cartridges): EEPROM saves, the
   2003 mapper's RTC, a button layout for them.
-- The frontend: a remembered window size, a file dialog, zip archives (MobiGoEmu's), a
-  release package.
+- The frontend: a remembered window size, a file dialog, a picker for a zip of many
+  cartridges.

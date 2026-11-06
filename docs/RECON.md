@@ -123,6 +123,7 @@ ask. (Seen first in the window, by the user, left idle on the textbook choice; m
 - whether the PCV2's boot ROM is the WonderSwan's (in its PCV2 mode) and what it leaves in the
   ports; bpc-emu starts at `4000:0000` with DS = `FF00`, SP = `2000` and the ports as the chip's
   reset leaves them (every cartridge's start-up code sets what it uses);
-- the PCV2's LCD: whether it has the WonderSwan's segment icons;
+- the PCV2's LCD: whether it has the WonderSwan's segment icons. No cartridge of the set ever
+  writes their port (`$15`, traced over 6000 frames each), so it does not matter to them;
 - sound: bpc-emu plays the speaker's mono mix and reports no headphones (port `$91` bit 7 = 0);
   whether the PCV2 has a headphone jack is not known.

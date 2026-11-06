@@ -1,7 +1,10 @@
 /* bpc-emu - the window: the picture, the sound, the buttons from the keyboard or a game
  * controller, the cartridge's SRAM kept in a file
  *
- *   bpc-emu [ROM.pc2] [--scale N]     or drop a cartridge on the window
+ *   bpc-emu [ROM.pc2 | ROMS.zip] [--scale N]     or drop one on the window; --version
+ *
+ * A zip may hold several cartridges: PageUp / PageDown go through them. The SRAM is kept as
+ * NAME.sav beside the cartridge (beside the zip for one in a zip).
  *
  * Keys: arrows = the pad; Z or Enter = Circle; X or Backspace = Clear; C = Pass; V = View;
  * Esc = Esc; F2 reset, P pause, F11 full screen, F12 a screenshot (PNG). */
@@ -13,6 +16,7 @@
 
 #include "pcv2.h"
 #include "png.h"
+#include "zip.h"
 
 static pcv2 s_p;
 static int s_loaded;
@@ -65,42 +69,50 @@ static void sram_save(void)
 	s_sram_sum = sram_sum();
 }
 
+/* a zip holding cartridges: kept in memory, PageUp / PageDown go through them */
+static uint8_t *s_zip;
+static size_t s_zip_size;
+static zip_entry s_ze[256];
+static int s_zn, s_zi;
+
+static const char *base_name(const char *path)
+{
+	const char *a = strrchr(path, '/'), *b = strrchr(path, '\\');
+	if (!a || (b && b > a))
+		a = b;
+	return a ? a + 1 : path;
+}
+
 static void set_title(const char *extra)
 {
 	char t[1200];
 	if (!s_loaded)
-		snprintf(t, sizeof t, "bpc-emu - drop a Pocket Challenge V2 cartridge here");
-	else {
-		const char *base = strrchr(s_rom_path, '/');
-		const char *b2 = strrchr(s_rom_path, '\\');
-		if (!base || (b2 && b2 > base))
-			base = b2;
-		snprintf(t, sizeof t, "bpc-emu - %s%s", base ? base + 1 : s_rom_path, extra);
-	}
+		snprintf(t, sizeof t, "bpc-emu - drop a Pocket Challenge V2 cartridge (or a zip of them) here");
+	else if (s_zn > 1)
+		snprintf(t, sizeof t, "bpc-emu - [%d/%d] %s%s (PageUp/PageDown: the others)", s_zi + 1, s_zn,
+			base_name(s_rom_path), extra);
+	else
+		snprintf(t, sizeof t, "bpc-emu - %s%s", base_name(s_rom_path), extra);
 	SDL_SetWindowTitle(s_win, t);
 }
 
-static int load(const char *path)
+/* a cartridge's bytes; name: its file's name (a zip entry's, or the file's), dir_of: the file
+ * the SRAM goes beside (NAME.sav in the same folder) */
+static int load_data(const uint8_t *data, size_t size, const char *name, const char *dir_of)
 {
-	size_t size;
-	uint8_t *data = read_file(path, &size);
-	if (!data) {
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "bpc-emu", "Cannot read the file.", s_win);
-		return 0;
-	}
 	sram_save();
 	char err[256];
-	int ok = pcv2_load(&s_p, data, size, err, sizeof err);
-	free(data);
-	if (!ok) {
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "bpc-emu", err, s_win);
+	if (!pcv2_load(&s_p, data, size, err, sizeof err)) {
+		char m[600];
+		snprintf(m, sizeof m, "%s: %s", base_name(name), err);
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "bpc-emu", m, s_win);
 		return 0;
 	}
-	snprintf(s_rom_path, sizeof s_rom_path, "%s", path);
-	snprintf(s_save_path, sizeof s_save_path, "%s", path);
+	snprintf(s_rom_path, sizeof s_rom_path, "%s", name);
+	size_t dl = (size_t)(base_name(dir_of) - dir_of);
+	snprintf(s_save_path, sizeof s_save_path, "%.*s%s", (int)dl, dir_of, base_name(name));
 	char *dot = strrchr(s_save_path, '.');
-	char *sl = strrchr(s_save_path, '/'), *bs = strrchr(s_save_path, '\\');
-	if (dot && dot > (sl ? sl : s_save_path) && dot > (bs ? bs : s_save_path))
+	if (dot && dot > s_save_path + dl)
 		*dot = 0;
 	strcat(s_save_path, ".sav");
 	FILE *f = fopen(s_save_path, "rb");
@@ -114,6 +126,64 @@ static int load(const char *path)
 	s_loaded = 1;
 	set_title("");
 	return 1;
+}
+
+static char s_zip_path[1024];
+
+static int load_zip_entry(int i)
+{
+	uint8_t *d = zip_extract(s_zip, s_zip_size, &s_ze[i]);
+	if (!d) {
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "bpc-emu", "Cannot read it from the zip.", s_win);
+		return 0;
+	}
+	s_zi = i;
+	int ok = load_data(d, s_ze[i].size, s_ze[i].name, s_zip_path);
+	free(d);
+	return ok;
+}
+
+static int is_cart_name(const char *n)
+{
+	const char *dot = strrchr(n, '.');
+	return dot && (!SDL_strcasecmp(dot, ".pc2") || !SDL_strcasecmp(dot, ".ws") || !SDL_strcasecmp(dot, ".wsc"));
+}
+
+static int load(const char *path)
+{
+	size_t size;
+	uint8_t *data = read_file(path, &size);
+	if (!data) {
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "bpc-emu", "Cannot read the file.", s_win);
+		return 0;
+	}
+	if (size >= 4 && !memcmp(data, "PK\3\4", 4)) {
+		static zip_entry all[256];
+		int n = zip_list(data, size, all, 256), k = 0;
+		for (int i = 0; i < n; i++)
+			if (is_cart_name(all[i].name))
+				s_ze[k++] = all[i];
+		if (k == 0) {
+			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "bpc-emu",
+				"No cartridge in this zip (.pc2, .ws or .wsc).", s_win);
+			free(data);
+			return 0;
+		}
+		free(s_zip);
+		s_zip = data;
+		s_zip_size = size;
+		s_zn = k;
+		snprintf(s_zip_path, sizeof s_zip_path, "%s", path);
+		return load_zip_entry(0);
+	}
+	int ok = load_data(data, size, path, path);
+	free(data);
+	if (ok) {
+		free(s_zip);
+		s_zip = NULL;
+		s_zn = 0;
+	}
+	return ok;
 }
 
 static uint16_t buttons(void)
@@ -175,6 +245,10 @@ int main(int argc, char **argv)
 	const char *rom = NULL;
 	int scale = 4;
 	for (int i = 1; i < argc; i++) {
+		if (!strcmp(argv[i], "--version")) {
+			printf("bpc-emu %s\n", BPC_VERSION);
+			return 0;
+		}
 		if (!strcmp(argv[i], "--scale") && i + 1 < argc)
 			scale = atoi(argv[++i]);
 		else
@@ -253,6 +327,11 @@ int main(int argc, char **argv)
 					SDL_SetWindowFullscreen(s_win, fs ? 0 : SDL_WINDOW_FULLSCREEN_DESKTOP);
 					break;
 				}
+				case SDLK_PAGEUP:
+				case SDLK_PAGEDOWN:
+					if (s_zn > 1)
+						load_zip_entry((s_zi + (e.key.keysym.sym == SDLK_PAGEDOWN ? 1 : s_zn - 1)) % s_zn);
+					break;
 				case SDLK_F12:
 					if (s_loaded)
 						screenshot();

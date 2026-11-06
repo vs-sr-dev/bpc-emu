@@ -20,6 +20,8 @@ First session (2026-11-06):
   for cycle — CPU registers, RAM, SRAM and picture compared at every frame.
 - All 13 reach their menus, drills and questions.
 - A window with sound, the keyboard and game controllers; the SRAM kept beside the cartridge.
+  Tried by hand: the speed, the sound, Left (the one button the oracle cannot press) and a
+  save kept across a restart.
 
 ## Bring your own dumps
 
@@ -27,6 +29,11 @@ This repository contains no cartridge data and never will. The Pocket Challenge 
 are `.pc2` files (a WonderSwan cartridge's format: no header, the 16-byte footer at the end).
 No BIOS is needed: the console's boot only hands over to the cartridge, which sets everything
 up itself.
+
+## Release
+
+`tools/package_release.sh` makes `dist/bpc-emu-<version>-win64.zip` (a clean Release build,
+`bpc-emu.exe`, `bpc-cli.exe`, SDL2.dll, the README and the licences).
 
 ## Build
 
@@ -42,8 +49,9 @@ Without SDL2 only the headless runner, `bpc-cli`, is built.
 
 ## Running
 
-`build/bpc-emu CART.pc2`, or drop a cartridge on its window. `--scale N` sets the window size.
-The SRAM is kept as `CART.sav` beside the cartridge.
+`build/bpc-emu CART.pc2`, or drop a cartridge on its window. A zip of cartridges works too:
+the first is loaded, PageUp and PageDown go through the others. `--scale N` sets the window size.
+The SRAM is kept as `CART.sav` beside the cartridge (beside the zip, for one in a zip).
 
 | Pocket Challenge V2 | Keyboard | Controller |
 |---|---|---|

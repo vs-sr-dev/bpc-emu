@@ -16,4 +16,4 @@ The Pocket Challenge V2's key matrix and boot mode: the WSdev wiki
 (https://ws.nesdev.org/wiki/Keypad), checked against the cartridges' own code
 (`docs/RECON.md`).
 
-`src/png.c` is MobiGoEmu's PNG writer (same author, MIT).
+`src/png.c` and `src/zip.c` are MobiGoEmu's PNG writer and zip reader (same author, MIT).
