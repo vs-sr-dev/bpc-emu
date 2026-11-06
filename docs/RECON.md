@@ -105,6 +105,19 @@ windows 4-8 (one megabyte, bank register `$C0` = `$xF`), switches banks 2 and 3 
 thousands of times a minute, and touches no EEPROM, RTC, serial port or DMA. No code in RAM, no
 self-modifying code.
 
+## The idle alarm
+
+Left alone, a cartridge beeps and shows, over whatever screen is up:
+
+> 長時間使用しない時は電源をお切り下さい — "if you are not going to use it for a long time,
+> please switch it off" (and 確認, "OK", to dismiss it)
+
+Chuu1 English, from its first screen with no button pressed: at frames 22505, 45011 and 67509,
+every 22500 frames, i.e. 300 seconds counted at 75 frames a second. The LCD runs at 75.47 Hz,
+so the alarm comes after 298 s. The console cannot switch itself off; the cartridge can only
+ask. (Seen first in the window, by the user, left idle on the textbook choice; measured with
+`bpc-cli --log --wav`.)
+
 ## Unknowns
 
 - whether the PCV2's boot ROM is the WonderSwan's (in its PCV2 mode) and what it leaves in the

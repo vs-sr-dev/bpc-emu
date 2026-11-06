@@ -7,7 +7,9 @@
 - Left: the one button the oracle cannot press. Check it in a screen that uses it (Suugaku's
   pointer at `4000:4420` moves left on `0100`).
 - The long Esc (held over 150 frames): what command it is.
-- Sound: listen to it (the speaker's mono mix); find which games use it and how.
+- Sound: heard in the window (beeps and square-wave arpeggios, as expected); find which games
+  use what and how.
+- The idle alarm (docs/RECON.md): find the counter in the code, and whether 確認 is Circle.
 - The LCD: whether the PCV2's screen has the WonderSwan's segment icons (port `$15`), and what
   the games write there.
 
